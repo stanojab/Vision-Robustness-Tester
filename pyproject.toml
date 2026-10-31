@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vision-robustness-tester"
+version = "0.1.0"
+description = "Measure how object detection models hold up under image degradation and catch performance regressions."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "ultralytics>=8.0",
+    "opencv-python-headless>=4.8",
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "tqdm>=4.65",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+robustness = "robustness.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["robustness"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes, I: import sorting, UP: modern syntax,
+# B: common bugs, SIM: simplifications, NPY: numpy-specific rules.
+select = ["E", "F", "I", "UP", "B", "SIM", "NPY"]
