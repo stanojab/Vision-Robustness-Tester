@@ -12,8 +12,8 @@ from robustness.metrics import Box
 from robustness.runner import (
     CLEAN,
     YoloDetector,
-    _image_rng,
     boxes_from_arrays,
+    image_rng,
     load_results,
     run_evaluation,
     save_results,
@@ -104,7 +104,7 @@ def test_results_do_not_depend_on_which_other_perturbations_run(fake_detector, s
 
 def test_image_rng_is_stable_and_independent():
     def draw(*args):
-        return _image_rng(*args).integers(0, 1_000_000, size=3).tolist()
+        return image_rng(*args).integers(0, 1_000_000, size=3).tolist()
 
     assert draw(0, "glare", 3) == draw(0, "glare", 3)
     assert draw(0, "glare", 3) != draw(1, "glare", 3)  # seed matters

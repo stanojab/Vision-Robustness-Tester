@@ -72,7 +72,7 @@ class YoloDetector:
         )
 
 
-def _image_rng(seed: int, perturbation: str, image_index: int) -> np.random.Generator:
+def image_rng(seed: int, perturbation: str, image_index: int) -> np.random.Generator:
     """Random generator for one (perturbation, image) pair.
 
     Seeding per pair (instead of one generator for the whole run) means the noise
@@ -149,7 +149,7 @@ def run_evaluation(
         for index, sample in enumerate(samples):
             image = sample.image
             if name != CLEAN:
-                image = apply_perturbation(name, image, severity, _image_rng(seed, name, index))
+                image = apply_perturbation(name, image, severity, image_rng(seed, name, index))
             image_pairs.append((detector.predict(image), sample.ground_truth))
             progress.update()
         metrics = compute_metrics(image_pairs, iou_threshold)

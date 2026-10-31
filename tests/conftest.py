@@ -6,6 +6,7 @@ dataset or the model, and never need a GPU.
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import cv2
 import numpy as np
@@ -13,6 +14,7 @@ import pytest
 
 from robustness.dataset import Sample
 from robustness.metrics import Box
+from robustness.runner import run_evaluation
 
 
 def _synthetic_scene(shape: tuple[int, ...], seed: int = 0) -> np.ndarray:
@@ -143,3 +145,44 @@ def yolo_dataset_dir(tmp_path: Path) -> Path:
     (labels / "img_0.txt").write_text("0 0.5 0.5 0.5 0.5\n2 0.25 0.75 0.1 0.2\n")
     (labels / "img_1.txt").write_text("\n1 0.5 0.5 1.0 1.0\n\n")
     return tmp_path
+
+
+# --- Results files -------------------------------------------------------------
+
+
+def build_results(conditions: dict[str, dict[str, float]], **metadata: Any) -> dict[str, Any]:
+    """Build a results dict in the runner's format with chosen metric values.
+
+    ``conditions`` maps ``"perturbation/severity"`` to metric overrides, e.g.
+    ``{"clean/0": {"recall": 0.8}}``. Unspecified metrics default to a perfect
+    score, so each test only spells out the numbers it is about.
+    """
+    results: dict[str, dict[str, Any]] = {}
+    for condition, metrics in conditions.items():
+        name, severity = condition.split("/")
+        overall = {"tp": 1, "fp": 0, "fn": 0, "precision": 1.0, "recall": 1.0, "f1": 1.0}
+        overall.update(metrics)
+        results.setdefault(name, {})[severity] = {"overall": overall, "per_class": {}}
+    return {
+        "metadata": {"model": "fake", "num_images": 10, "seed": 0, **metadata},
+        "results": results,
+    }
+
+
+@pytest.fixture
+def make_results() -> Callable[..., dict[str, Any]]:
+    """Factory fixture for hand-built results (see ``build_results``)."""
+    return build_results
+
+
+@pytest.fixture
+def fake_results(fake_detector: FakeDetector, synthetic_samples: list[Sample]) -> dict[str, Any]:
+    """Results from a real (fast) run of the fake detector on the synthetic samples."""
+    return run_evaluation(
+        fake_detector,
+        synthetic_samples,
+        perturbations=["brightness_decrease", "gaussian_blur", "glare"],
+        severities=[1, 3, 5],
+        extra_metadata={"dataset": "synthetic"},
+        show_progress=False,
+    )
